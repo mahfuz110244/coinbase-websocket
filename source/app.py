@@ -2,8 +2,6 @@ import asyncio
 import websockets
 import json
 
-# from .data_stream import calculate_vwap
-
 BTC_USD = "BTC-USD"
 ETH_USD = "ETH-USD"
 ETH_BTC = "ETH-BTC"
@@ -51,19 +49,16 @@ async def stream(msg, url):
         while True:
             try:
                 response = await ws.recv()
-                # print(response)
                 result = json.loads(response)
                 if "type" in result.keys() and result['type'] == "ticker":
                     if len(DATA_FEEDS) == 200:
                         DATA_FEEDS.pop(0)
                     price = (float(result['open_24h']) + float(result['high_24h']) + float(result['low_24h'])) / 3
-                    # print(float(result['price']), price)
                     DATA_FEEDS.append({
                         "product_id": result['product_id'],
                         "price": price,
                         "volume": float(result['volume_24h']),
                     })
-                    # print(len(DATA_FEEDS))
                     calculate_vwap(DATA_FEEDS)
                 await asyncio.sleep(3)
             except Exception as e:
