@@ -1,11 +1,14 @@
-from websocket import create_connection
+import asyncio
+import websockets
 import json
-import time
+
+# from .data_stream import calculate_vwap
 
 BTC_USD = "BTC-USD"
 ETH_USD = "ETH-USD"
 ETH_BTC = "ETH-BTC"
 TRADES = ["BTC-USD", "ETH-USD", "ETH-BTC"]
+DATA_FEEDS = []
 
 
 def calculate_vwap(feeds_data):
@@ -42,30 +45,37 @@ def calculate_vwap(feeds_data):
         print(f"{ETH_BTC} Volume Weighted Average Price is {trades[ETH_BTC]['total_price_volume']/trades[ETH_BTC]['total_volume']}")
 
 
-if __name__ == '__main__':
-    # URL = "wss://ws-feed-public.sandbox.pro.coinbase.com"
-    URL = "wss://ws-feed.pro.coinbase.com"
-    ws = create_connection(URL)
+async def stream(msg, url):
+    async with websockets.connect(url) as ws:
+        await ws.send(msg)
+        while True:
+            try:
+                response = await ws.recv()
+                # print(response)
+                result = json.loads(response)
+                if "type" in result.keys() and result['type'] == "ticker":
+                    if len(DATA_FEEDS) == 200:
+                        DATA_FEEDS.pop(0)
+                    price = (float(result['open_24h']) + float(result['high_24h']) + float(result['low_24h'])) / 3
+                    # print(float(result['price']), price)
+                    DATA_FEEDS.append({
+                        "product_id": result['product_id'],
+                        "price": price,
+                        "volume": float(result['volume_24h']),
+                    })
+                    # print(len(DATA_FEEDS))
+                    calculate_vwap(DATA_FEEDS)
+                await asyncio.sleep(3) #Added
+            except Exception as e:
+                print(e)
+                await ws.close()
+                break
+
+if __name__ == "__main__":
+    url = "wss://ws-feed.pro.coinbase.com"
     params = {
         "type": "subscribe",
-        "channels": [{"name": "ticker", "product_ids": ["BTC-USD", "ETH-USD", "ETH-BTC"]}]
+        "channels": [{"name": "ticker", "product_ids": TRADES}]
     }
-
-    data_feeds = []
-    while True:
-        ws.send(json.dumps(params))
-        result = ws.recv()
-        time.sleep(1)
-        converted = json.loads(result)
-        print(converted)
-        if "type" in converted.keys() and converted['type'] == "ticker":
-            if len(data_feeds) == 200:
-                data_feeds.pop(0)
-            price = (float(converted['open_24h']) + float(converted['high_24h']) + float(converted['low_24h']))/3
-            print(float(converted['price']), price)
-            data_feeds.append({
-                "product_id": converted['product_id'],
-                "price": price,
-                "volume": float(converted['volume_24h']),
-            })
-            calculate_vwap(data_feeds)
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(stream(json.dumps(params), url))
