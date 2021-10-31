@@ -1,22 +1,33 @@
 # coinbase-websocket
 Zero Hash Code Challenge
 
-### Installation
+### Clone the project
+
+```
+git clone https://github.com/mahfuz110244/coinbase-websocket.git
+cd coinbase-websocket
+```
+
+### Install dependencies & activate virtualenv
+
 ```
 pip3 install virtualenv
 
-virtualenv -p python3 venv
+virtualenv -p python3.7 venv
 source venv/bin/activate
 ```
-
 
 ### Install requirements inside virtual environment:
 ```
 pip3 install -r requirements.txt
 ```
 
-
-### Run: Retrieve a data feed from the coinbase websocket and calculate Volume Weighted Average Price(VWAP)
+### Run
 ```
- python3 data_stream.py
+python3 source/app.py
+```
+
+### Run Test
+```
+pytest -v
 ```

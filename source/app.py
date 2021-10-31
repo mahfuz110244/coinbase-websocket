@@ -65,7 +65,7 @@ async def stream(msg, url):
                     })
                     # print(len(DATA_FEEDS))
                     calculate_vwap(DATA_FEEDS)
-                await asyncio.sleep(3) #Added
+                await asyncio.sleep(3)
             except Exception as e:
                 print(e)
                 await ws.close()
