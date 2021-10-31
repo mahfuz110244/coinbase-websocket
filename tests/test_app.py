@@ -1,11 +1,24 @@
-from source.app import calculate_vwap
+import json
+from source.app import calculate_vwap, stream, TRADES
+
+
+def test_stream_data(capsys):
+    url = "wss://ws-feed.pro.coinbase.com"
+    params = {
+        "type": "subscribe",
+        "channels": [{"name": "ticker", "product_ids": TRADES}]
+    }
+    stream(json.dumps(params), url)
+    out, err = capsys.readouterr()
+    assert err == ""
 
 
 def test_vwap_calculation_with_empty_data(capsys):
     data = []
     calculate_vwap(data)
-    captured = capsys.readouterr()
-    assert captured.out == ""
+    out, err = capsys.readouterr()
+    assert out == ""
+    assert err == ""
 
 
 def test_vwap_calculation_with_200_data(capsys):
@@ -211,9 +224,10 @@ def test_vwap_calculation_with_200_data(capsys):
             {'product_id': 'ETH-USD', 'price': 4296.9800000000005, 'volume': 141614.7688906}]
 
     calculate_vwap(data)
-    captured = capsys.readouterr()
-    assert captured.out == (
-            "BTC-USD Volume Weighted Average Price is 61425.34333333333\n"
-            "ETH-USD Volume Weighted Average Price is 4296.98\n"
-            "ETH-BTC Volume Weighted Average Price is 0.07015666666666666\n"
-        )
+    out, err = capsys.readouterr()
+    assert out == (
+        "BTC-USD Volume Weighted Average Price is 61425.34333333333\n"
+        "ETH-USD Volume Weighted Average Price is 4296.98\n"
+        "ETH-BTC Volume Weighted Average Price is 0.07015666666666666\n"
+    )
+    assert err == ""
